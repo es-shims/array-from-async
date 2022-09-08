@@ -9,7 +9,8 @@ test('creates promise', async t => {
 
 test('creates new array in promise', async t => {
   const expected = [ 0, 1, 2 ];
-  const output = await fromAsync(expected);
+  const input = expected.values();
+  const output = await fromAsync(input);
   t.equal(output.constructor, Array);
   t.notEqual(output, expected);
 });
@@ -49,10 +50,11 @@ test('does not resort to creating array if constructor throws', async t => {
   await t.rejects(outputPromise, SpecialError);
 });
 
-test('ordinary-iterable input', async t => {
+test('sync-iterable input with no promises', async t => {
   t.test('is dumped', async t => {
     const expected = [ 0, 1, 2 ];
-    const output = await fromAsync(expected);
+    const input = [ 0, 1, 2 ].values();
+    const output = await fromAsync(input);
     t.deepEqual(output, expected);
   });
 
@@ -63,7 +65,7 @@ test('ordinary-iterable input', async t => {
         [ 2, undefined ],
         [ 4, undefined ],
       ];
-      const input = [ 0, 1, 2 ];
+      const input = [ 0, 1, 2 ].values();
       const output = await fromAsync(input, function (v) {
         return [ v * 2, this ];
       });
@@ -77,7 +79,7 @@ test('ordinary-iterable input', async t => {
         [ 2, thisValue ],
         [ 4, thisValue ],
       ];
-      const input = [ 0, 1, 2 ];
+      const input = [ 0, 1, 2 ].values();
       const output = await fromAsync(input, function (v) {
         return [ v * 2, this ];
       }, thisValue);
@@ -92,7 +94,7 @@ test('ordinary-iterable input', async t => {
         [ 2, undefined ],
         [ 4, undefined ],
       ];
-      const input = [ 0, 1, 2 ];
+      const input = [ 0, 1, 2 ].values();
       const output = await fromAsync(input, async function (v) {
         return [ v * 2, this ];
       });
@@ -106,7 +108,7 @@ test('ordinary-iterable input', async t => {
         [ 2, thisValue ],
         [ 4, thisValue ],
       ];
-      const input = [ 0, 1, 2 ];
+      const input = [ 0, 1, 2 ].values();
       const output = await fromAsync(input, async function (v) {
         return [ v * 2, this ];
       }, thisValue);
