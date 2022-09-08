@@ -27,7 +27,7 @@ test('creates new array-like in promise', async t => {
   t.equal(output[3], undefined);
 });
 
-test('resorts to creating array if dynamic-this is not constructor', async t => {
+test('creates array if dynamic-this is not constructor', async t => {
   const expected = [ 0, 1, 2 ];
   const arrowFn = () => {};
   const output = await fromAsync.call(arrowFn, expected);
@@ -58,7 +58,11 @@ test('ordinary-iterable input', async t => {
 
   t.test('sync mapped', async t => {
     t.test('with default undefined this', async t => {
-      const expected = [ [ 0, undefined ], [ 2, undefined ], [ 4, undefined ] ];
+      const expected = [
+        [ 0, undefined ],
+        [ 2, undefined ],
+        [ 4, undefined ],
+      ];
       const input = [ 0, 1, 2 ];
       const output = await fromAsync(input, function (v) {
         return [ v * 2, this ];
@@ -68,7 +72,11 @@ test('ordinary-iterable input', async t => {
 
     t.test('with given this', async t => {
       const thisValue = {};
-      const expected = [ [ 0, thisValue ], [ 2, thisValue ], [ 4, thisValue ] ];
+      const expected = [
+        [ 0, thisValue ],
+        [ 2, thisValue ],
+        [ 4, thisValue ],
+      ];
       const input = [ 0, 1, 2 ];
       const output = await fromAsync(input, function (v) {
         return [ v * 2, this ];
@@ -79,7 +87,11 @@ test('ordinary-iterable input', async t => {
 
   t.test('async mapped', async t => {
     t.test('with default undefined this', async t => {
-      const expected = [ [ 0, undefined ], [ 2, undefined ], [ 4, undefined ] ];
+      const expected = [
+        [ 0, undefined ],
+        [ 2, undefined ],
+        [ 4, undefined ],
+      ];
       const input = [ 0, 1, 2 ];
       const output = await fromAsync(input, async function (v) {
         return [ v * 2, this ];
@@ -89,7 +101,11 @@ test('ordinary-iterable input', async t => {
 
     t.test('with given this', async t => {
       const thisValue = {};
-      const expected = [ [ 0, thisValue ], [ 2, thisValue ], [ 4, thisValue ] ];
+      const expected = [
+        [ 0, thisValue ],
+        [ 2, thisValue ],
+        [ 4, thisValue ],
+      ];
       const input = [ 0, 1, 2 ];
       const output = await fromAsync(input, async function (v) {
         return [ v * 2, this ];
@@ -114,7 +130,11 @@ test('async-iterable input', async t => {
 
   t.test('sync mapped', async t => {
     t.test('with default undefined this', async t => {
-      const expected = [ [ 0, 0, undefined ], [ 2, 1, undefined ], [ 4, 2, undefined ] ];
+      const expected = [
+        [ 0, 0, undefined ],
+        [ 2, 1, undefined ],
+        [ 4, 2, undefined ],
+      ];
 
       async function* generateInput () {
         yield* [ 0, 1, 2 ];
@@ -129,7 +149,11 @@ test('async-iterable input', async t => {
 
     t.test('with given this', async t => {
       const thisValue = {};
-      const expected = [ [ 0, 0, thisValue ], [ 2, 1, thisValue ], [ 4, 2, thisValue ] ];
+      const expected = [
+        [ 0, 0, thisValue ],
+        [ 2, 1, thisValue ],
+        [ 4, 2, thisValue ],
+      ];
 
       async function* generateInput () {
         yield* [ 0, 1, 2 ];
@@ -145,7 +169,11 @@ test('async-iterable input', async t => {
 
   t.test('async mapped', async t => {
     t.test('with default undefined this', async t => {
-      const expected = [ [ 0, 0, undefined ], [ 2, 1, undefined ], [ 4, 2, undefined ] ];
+      const expected = [
+        [ 0, 0, undefined ],
+        [ 2, 1, undefined ],
+        [ 4, 2, undefined ],
+      ];
 
       async function* generateInput () {
         yield* [ 0, 1, 2 ];
@@ -160,7 +188,11 @@ test('async-iterable input', async t => {
 
     t.test('with given this', async t => {
       const thisValue = {};
-      const expected = [ [ 0, 0, thisValue ], [ 2, 1, thisValue ], [ 4, 2, thisValue ] ];
+      const expected = [
+        [ 0, 0, thisValue ],
+        [ 2, 1, thisValue ],
+        [ 4, 2, thisValue ],
+      ];
 
       async function* generateInput () {
         yield* [ 0, 1, 2 ];

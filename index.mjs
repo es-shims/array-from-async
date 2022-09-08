@@ -25,7 +25,9 @@ export default async function fromAsync (items, mapfn, thisArg) {
   let i = 0;
   for await (const v of items) {
     if (i > MAX_SAFE_INTEGER)
-      throw TypeError('Input is too long and exceeded Number.MAX_SAFE_INTEGER times.');
+      throw TypeError(
+        'Input is too long and exceeded Number.MAX_SAFE_INTEGER times.',
+      );
     if (mapfn) {
       result[i] = await mapfn.call(thisArg, v, i);
     } else {
