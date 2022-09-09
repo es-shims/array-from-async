@@ -15,7 +15,7 @@ test('creates new array in promise', async t => {
   t.notEqual(output, expected);
 });
 
-test('creates new array-like in promise', async t => {
+test('creates new arraylike in promise', async t => {
   class C {}
 
   const input = [ 0, 1, 2 ];
@@ -40,6 +40,20 @@ test('arraylike constructor is given no arg for iterable inputs', async t => {
   const input = [ 0, 1, 2 ];
   await fromAsync.call(C, input);
   t.equal(initialLength, undefined);
+});
+
+test('arraylike constructor is given input arraylike’s length', async t => {
+  let initialLength;
+
+  class C {
+    constructor (arg0) {
+      initialLength = arg0;
+    }
+  }
+
+  const input = { length: 3 };
+  await fromAsync.call(C, input);
+  t.equal(initialLength, 3);
 });
 
 test('creates array if dynamic-this is not constructor', async t => {
