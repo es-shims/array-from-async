@@ -28,6 +28,20 @@ test('creates new array-like in promise', async t => {
   t.equal(output[3], undefined);
 });
 
+test('arraylike constructor is given no arg for iterable inputs', async t => {
+  let initialLength;
+
+  class C {
+    constructor (arg0) {
+      initialLength = arg0;
+    }
+  }
+
+  const input = [ 0, 1, 2 ];
+  await fromAsync.call(C, input);
+  t.equal(initialLength, undefined);
+});
+
 test('creates array if dynamic-this is not constructor', async t => {
   const expected = [ 0, 1, 2 ];
   const arrowFn = () => {};
