@@ -130,6 +130,34 @@ test('async-iterable input', async t => {
     t.deepEqual(output, expected);
   });
 
+  t.test('does not await input values', async t => {
+    const prom = Promise.resolve({});
+    const expected = [ prom ];
+
+    function createInput () {
+      return {
+        // The following async iterator will yield one value
+        // (the promise named “prom”).
+        [Symbol.asyncIterator]() {
+          let i = 0;
+          return {
+            async next() {
+              if (i > 0) {
+                return { done: true };
+              }
+              i++;
+              return { value: prom, done: false }
+            },
+          };
+        },
+      };
+    }
+
+    const input = createInput();
+    const output = await fromAsync(input);
+    t.deepEqual(output, expected);
+  });
+
   t.test('sync mapped', async t => {
     t.test('with default undefined this', async t => {
       const expected = [
