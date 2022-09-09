@@ -86,6 +86,34 @@ test('sync-iterable input with no promises', async t => {
     t.deepEqual(output, expected);
   });
 
+  test('result promise rejects if iteration fails', async t => {
+    class SpecialError extends Error {}
+
+    function* generateInput () {
+      throw new SpecialError;
+    }
+
+    const input = generateInput();
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, SpecialError);
+  });
+
+  // Because this test causes Node to crash if it is given insufficient memory,
+  // we skip this test.
+  t.skip('rejects with error if length exceeds safe integers', async t => {
+    function* generateInput () {
+      for (let i = 0; i < Number.MAX_SAFE_INTEGER + 1; i ++) {
+        yield 0;
+      }
+    }
+
+    const input = generateInput();
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, TypeError);
+  });
+
   t.test('sync mapped', async t => {
     t.test('with default undefined this', async t => {
       const expected = [
@@ -112,6 +140,17 @@ test('sync-iterable input with no promises', async t => {
         return [ v * 2, this ];
       }, thisValue);
       t.deepEqual(output, expected);
+    });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      const input = [ 0 ].values();
+      const outputPromise = fromAsync(input, v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
     });
   });
 
@@ -141,6 +180,17 @@ test('sync-iterable input with no promises', async t => {
         return [ v * 2, this ];
       }, thisValue);
       t.deepEqual(output, expected);
+    });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      const input = [ 0 ].values();
+      const outputPromise = fromAsync(input, async v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
     });
   });
 });
@@ -179,6 +229,34 @@ test('sync-iterable input with thenables', async t => {
     const input = [ inputThenable ].values();
     await fromAsync(input);
     t.is(awaitCounter, 1);
+  });
+
+  test('result promise rejects if element’s “then” method fails', async t => {
+    class SpecialError extends Error {}
+
+    const inputThenable = {
+      then (resolve, reject) {
+        throw new SpecialError;
+      },
+    };
+    const input = [ inputThenable ].values();
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, SpecialError);
+  });
+
+  test('result promise rejects if thenable element rejects', async t => {
+    class SpecialError extends Error {}
+
+    const inputThenable = {
+      then (resolve, reject) {
+        reject(new SpecialError);
+      },
+    };
+    const input = [ inputThenable ].values();
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, SpecialError);
   });
 
   t.test('sync mapped', async t => {
@@ -222,6 +300,17 @@ test('sync-iterable input with thenables', async t => {
       const input = [ inputThenable ].values();
       await fromAsync(input, v => v);
       t.is(awaitCounter, 1);
+    });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      const input = [ Promise.resolve(0) ].values();
+      const outputPromise = fromAsync(input, v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
     });
   });
 
@@ -287,10 +376,21 @@ test('sync-iterable input with thenables', async t => {
       });
       t.is(awaitCounter, 3);
     });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      const input = [ Promise.resolve(0) ].values();
+      const outputPromise = fromAsync(input, async v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
+    });
   });
 });
 
-test('non-iterable arraylike with no promises', async t => {
+test('non-iterable arraylike input without thenables', async t => {
   t.test('is dumped', async t => {
     const expected = [ 0, 1, 2 ];
     const input = {
@@ -302,6 +402,48 @@ test('non-iterable arraylike with no promises', async t => {
     };
     const output = await fromAsync(input);
     t.deepEqual(output, expected);
+  });
+
+  test('result promise rejects if length access fails', async t => {
+    class SpecialError extends Error {}
+
+    const input = {
+      get length () {
+        throw new SpecialError;
+      },
+    };
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, SpecialError);
+  });
+
+  test('result promise rejects if element access fails', async t => {
+    class SpecialError extends Error {}
+
+    const input = {
+      length: 1,
+      get 0 () {
+        throw new SpecialError;
+      },
+    };
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, SpecialError);
+  });
+
+  // Because this test causes Node to crash if it is given insufficient memory,
+  // we skip this test.
+  t.skip('rejects with error if length exceeds safe integers', async t => {
+    function* generateInput () {
+      for (let i = 0; i < Number.MAX_SAFE_INTEGER + 1; i ++) {
+        yield 0;
+      }
+    }
+
+    const input = generateInput();
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, TypeError);
   });
 
   t.test('sync mapped', async t => {
@@ -342,6 +484,20 @@ test('non-iterable arraylike with no promises', async t => {
         return [ v * 2, this ];
       }, thisValue);
       t.deepEqual(output, expected);
+    });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      const input = {
+        length: 1,
+        0: 0,
+      };
+      const outputPromise = fromAsync(input, v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
     });
   });
 
@@ -384,10 +540,24 @@ test('non-iterable arraylike with no promises', async t => {
       }, thisValue);
       t.deepEqual(output, expected);
     });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      const input = {
+        length: 1,
+        0: 0,
+      };
+      const outputPromise = fromAsync(input, v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
+    });
   });
 });
 
-test('non-iterable arraylike with thenables', async t => {
+test('non-iterable arraylike input with thenables', async t => {
   t.test('is dumped', async t => {
     const expected = [ 0, 1, 2 ];
     const input = {
@@ -435,6 +605,40 @@ test('non-iterable arraylike with thenables', async t => {
     t.is(awaitCounter, 1);
   });
 
+  test('result promise rejects if element’s “then” method fails', async t => {
+    class SpecialError extends Error {}
+
+    const inputThenable = {
+      then (resolve, reject) {
+        throw new SpecialError;
+      },
+    };
+    const input = {
+      length: 1,
+      0: inputThenable,
+    };
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, SpecialError);
+  });
+
+  test('result promise rejects if thenable element rejects', async t => {
+    class SpecialError extends Error {}
+
+    const inputThenable = {
+      then (resolve, reject) {
+        reject(new SpecialError);
+      },
+    };
+    const input = {
+      length: 1,
+      0: inputThenable,
+    };
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, SpecialError);
+  });
+
   t.test('sync mapped', async t => {
     t.test('with default undefined this', async t => {
       const expected = [
@@ -491,6 +695,20 @@ test('non-iterable arraylike with thenables', async t => {
       };
       await fromAsync(input, v => v);
       t.is(awaitCounter, 1);
+    });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      const input = {
+        length: 1,
+        0: 0,
+      };
+      const outputPromise = fromAsync(input, v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
     });
   });
 
@@ -576,6 +794,20 @@ test('non-iterable arraylike with thenables', async t => {
         };
       });
       t.is(awaitCounter, 3);
+    });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      const input = {
+        length: 1,
+        0: 0,
+      };
+      const outputPromise = fromAsync(input, v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
     });
   });
 });
@@ -621,6 +853,34 @@ test('async-iterable input', async t => {
     t.deepEqual(output, expected);
   });
 
+  test('result promise rejects if iteration fails', async t => {
+    class SpecialError extends Error {}
+
+    async function* generateInput () {
+      throw new SpecialError;
+    }
+
+    const input = generateInput();
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, SpecialError);
+  });
+
+  // Because this test causes Node to crash if it is given insufficient memory,
+  // we skip this test.
+  t.skip('rejects with error if length exceeds safe integers', async t => {
+    async function* generateInput () {
+      for (let i = 0; i < Number.MAX_SAFE_INTEGER + 1; i ++) {
+        yield 0;
+      }
+    }
+
+    const input = generateInput();
+    const outputPromise = fromAsync(input);
+
+    await t.rejects(outputPromise, TypeError);
+  });
+
   t.test('sync mapped', async t => {
     t.test('with default undefined this', async t => {
       const expected = [
@@ -657,6 +917,21 @@ test('async-iterable input', async t => {
         return [ v * 2, i, this ];
       }, thisValue);
       t.deepEqual(output, expected);
+    });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      async function* generateInput () {
+        yield 0;
+      }
+
+      const input = generateInput();
+      const outputPromise = fromAsync(input, v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
     });
   });
 
@@ -722,6 +997,21 @@ test('async-iterable input', async t => {
       });
 
       t.is(awaitCounter, 3);
+    });
+
+    test('result promise rejects if callback fails', async t => {
+      class SpecialError extends Error {}
+
+      async function* generateInput () {
+        yield 0;
+      }
+
+      const input = generateInput();
+      const outputPromise = fromAsync(input, v => {
+        throw new SpecialError(v);
+      });
+
+      await t.rejects(outputPromise, SpecialError);
     });
   });
 });
