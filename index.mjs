@@ -1,6 +1,7 @@
 const { MAX_SAFE_INTEGER } = Number;
 const iteratorSymbol = Symbol.iterator;
 const asyncIteratorSymbol = Symbol.asyncIterator;
+const IntrinsicArray = Array;
 const tooLongErrorMessage =
   'Input is too long and exceeded Number.MAX_SAFE_INTEGER times.';
 
@@ -31,7 +32,7 @@ export default async function fromAsync (items, mapfn, thisArg) {
   if (itemsAreIterable) {
     const result = isConstructor(this)
       ? new this
-      : Array(0);
+      : IntrinsicArray(0);
 
     let i = 0;
 
@@ -61,7 +62,7 @@ export default async function fromAsync (items, mapfn, thisArg) {
     const { length } = items;
     const result = isConstructor(this)
       ? new this(length)
-      : Array(length);
+      : IntrinsicArray(length);
 
     let i = 0;
 

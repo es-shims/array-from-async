@@ -64,6 +64,31 @@ test('creates array if dynamic-this is not constructor', async t => {
   t.deepEqual(output, expected);
 });
 
+test('uses intrinsic Array function even with mutated globalThis', async t => {
+  const IntrinsicArray = globalThis.Array;
+  try {
+    // Temporarily mutate globalThis to use a fake Array function, which should
+    // be ignored by fromAsync.
+    globalThis.Array = function FakeArray () {
+      t.fail(
+        'This FakeArray function should not be called; ' +
+        'the intrinsic Array function should have been called instead.',
+      );
+    };
+
+    const expected = [ 0, 1, 2 ];
+    const arrowFn = () => {};
+    const output = await fromAsync.call(arrowFn, expected);
+    t.equal(output.constructor, IntrinsicArray);
+    t.deepEqual(output, expected);
+  }
+
+  finally {
+    // Reset globalThis.Array for other tests.
+    globalThis.Array = IntrinsicArray;
+  }
+});
+
 test('does not resort to creating array if constructor throws', async t => {
   class SpecialError extends Error {}
 
@@ -429,6 +454,86 @@ test('non-iterable arraylike input without thenables', async t => {
     const outputPromise = fromAsync(input);
 
     await t.rejects(outputPromise, SpecialError);
+  });
+
+  test('does not use array iterator prototype', async t => {
+    const arrayIterator =
+      [].values();
+    const IntrinsicArrayIteratorPrototype =
+      Object.getPrototypeOf(arrayIterator);
+    const intrinsicArrayIteratorPrototypeNext =
+      IntrinsicArrayIteratorPrototype.next;
+
+    try {
+      // Temporarily mutate the array iterator prototype to have an invalid
+      // “next” method. Just like Array.from, the fromAsync function should
+      // still work on non-iterable arraylike arguments.
+      IntrinsicArrayIteratorPrototype.next = function fakeNext () {
+        t.fail(
+          'This fake next function should not be called; ' +
+          'instead, each element should have been directly accessed.',
+        );
+      };
+
+      const expected = [ 0, 1, 2 ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: 1,
+        2: 2,
+      };
+      const output = await fromAsync(input);
+      t.deepEqual(output, expected);
+    }
+
+    finally {
+      // Reset the intrinsic array iterator for other tests.
+      IntrinsicArrayIteratorPrototype.next =
+        intrinsicArrayIteratorPrototypeNext;
+    }
+  });
+
+  test('unaffected by globalThis.Symbol mutation', async t => {
+    const IntrinsicSymbol = globalThis.Symbol;
+
+    try {
+      const fakeIteratorSymbol = Symbol('fakeIterator');
+      const fakeAsyncIteratorSymbol = Symbol('fakeAsyncIterator');
+      // Temporarily mutate globalThis.Symbol with fake symbol keys.
+      globalThis.Symbol = {
+        iterator: fakeIteratorSymbol,
+        asyncIterator: fakeAsyncIteratorSymbol,
+      };
+
+      const expected = [ 0, 1, 2 ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: 1,
+        2: 2,
+        [fakeIteratorSymbol] () {
+          t.fail(
+            'This fake Symbol.iterator method should not be called; ' +
+            'instead, the presence of the intrinsic Symbol.iterator ' +
+            'should have been checked.'
+          );
+        },
+        [fakeAsyncIteratorSymbol] () {
+          t.fail(
+            'This fake Symbol.asyncIterator method should not be called; ' +
+            'instead, the presence of the intrinsic Symbol.asyncIterator ' +
+            'should have been checked.'
+          );
+        },
+      };
+      const output = await fromAsync(input);
+      t.deepEqual(output, expected);
+    }
+
+    finally {
+      // Reset globalThis.Symbol.
+      globalThis.Symbol = IntrinsicSymbol;
+    }
   });
 
   // Because this test causes Node to crash if it is given insufficient memory,
