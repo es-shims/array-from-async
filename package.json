@@ -1,6 +1,6 @@
 {
   "name": "array-from-async",
-  "version": "2.0.3",
+  "version": "3.0.0",
   "description": "An implementation for Array.fromAsync, which dumps an async iterator into an array.",
   "type": "module",
   "main": "index.mjs",

@@ -1,5 +1,17 @@
 # array-from-async changelog
 
+## v3.0.0 (2022-09-08)
+Added support for non-iterable arraylike objects – objects that have a length
+property and element properties, like `{ length: 2, 0: 'x', 1: 'y' }`.
+
+Also made the package not be affected by mutation of `globalThis.Array` or
+`globalThis.Symbol`. This is a breaking change, but mutation of `globalThis` is
+bad practice anyway.
+
+This makes the package up to date with the specification as of 2022-09-08. Many
+tests were also added, and several developer dependencies were upgraded (the
+package itself still has no dependencies).
+
 ## v2.0.3 (2021-12-17)
 Community-health files `CODE_OF_CONDUCT.md` and `CONTRIBUTING.md` were added.
 `package.json`’s `LICENSE.md` was reverted back to the correct BSD-3-Clause.
