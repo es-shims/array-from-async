@@ -206,5 +206,31 @@ test('async-iterable input', async t => {
       }, thisValue);
       t.deepEqual(output, expected);
     });
+
+    t.test('awaits each callback result once', async t => {
+      const expectedValue = {};
+      const expected = [ expectedValue ];
+
+      async function* generateInput () {
+        yield* [ 0, 1, 2 ];
+      }
+
+      const input = generateInput();
+
+      let awaitCounter = 0;
+
+      await fromAsync(input, v => {
+        return {
+          // This “then” method should occur three times:
+          // one for each value from the input.
+          then (resolve, reject) {
+            awaitCounter ++;
+            resolve(v);
+          },
+        };
+      });
+
+      t.is(awaitCounter, 3);
+    });
   });
 });
