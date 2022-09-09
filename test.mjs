@@ -276,6 +276,296 @@ test('sync-iterable input with thenables', async t => {
   });
 });
 
+test('non-iterable arraylike with no promises', async t => {
+  t.test('is dumped', async t => {
+    const expected = [ 0, 1, 2 ];
+    const input = {
+      length: 3,
+      0: 0,
+      1: 1,
+      2: 2,
+      3: 3, // This is ignored because the length is 3.
+    };
+    const output = await fromAsync(input);
+    t.deepEqual(output, expected);
+  });
+
+  t.test('sync mapped', async t => {
+    t.test('with default undefined this', async t => {
+      const expected = [
+        [ 0, undefined ],
+        [ 2, undefined ],
+        [ 4, undefined ],
+      ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: 1,
+        2: 2,
+        3: 3, // This is ignored because the length is 3.
+      };
+      const output = await fromAsync(input, function (v) {
+        return [ v * 2, this ];
+      });
+      t.deepEqual(output, expected);
+    });
+
+    t.test('with given this', async t => {
+      const thisValue = {};
+      const expected = [
+        [ 0, thisValue ],
+        [ 2, thisValue ],
+        [ 4, thisValue ],
+      ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: 1,
+        2: 2,
+        3: 3, // This is ignored because the length is 3.
+      };
+      const output = await fromAsync(input, function (v) {
+        return [ v * 2, this ];
+      }, thisValue);
+      t.deepEqual(output, expected);
+    });
+  });
+
+  t.test('async mapped', async t => {
+    t.test('with default undefined this', async t => {
+      const expected = [
+        [ 0, undefined ],
+        [ 2, undefined ],
+        [ 4, undefined ],
+      ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: 1,
+        2: 2,
+        3: 3, // This is ignored because the length is 3.
+      };
+      const output = await fromAsync(input, async function (v) {
+        return [ v * 2, this ];
+      });
+      t.deepEqual(output, expected);
+    });
+
+    t.test('with given this', async t => {
+      const thisValue = {};
+      const expected = [
+        [ 0, thisValue ],
+        [ 2, thisValue ],
+        [ 4, thisValue ],
+      ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: 1,
+        2: 2,
+        3: 3, // This is ignored because the length is 3.
+      };
+      const output = await fromAsync(input, async function (v) {
+        return [ v * 2, this ];
+      }, thisValue);
+      t.deepEqual(output, expected);
+    });
+  });
+});
+
+test('non-iterable arraylike with thenables', async t => {
+  t.test('is dumped', async t => {
+    const expected = [ 0, 1, 2 ];
+    const input = {
+      length: 3,
+      0: 0,
+      1: Promise.resolve(1),
+      2: Promise.resolve(2),
+      3: Promise.resolve(3), // This is ignored because the length is 3.
+    };
+    const output = await fromAsync(input);
+    t.deepEqual(output, expected);
+  });
+
+  t.test('works with non-promise thenables', async t => {
+    const expectedValue = {};
+    const expected = [ expectedValue ];
+    const inputThenable = {
+      then (resolve, reject) {
+        resolve(expectedValue);
+      },
+    };
+    const input = {
+      length: 1,
+      0: inputThenable,
+    };
+    const output = await fromAsync(input);
+    t.deepEqual(output, expected);
+  });
+
+  t.test('awaits each input value once without mapping callback', async t => {
+    const expectedValue = {};
+    const expected = [ expectedValue ];
+    let awaitCounter = 0;
+    const inputThenable = {
+      then (resolve, reject) {
+        awaitCounter ++;
+        resolve(expectedValue);
+      },
+    };
+    const input = {
+      length: 1,
+      0: inputThenable,
+    };
+    await fromAsync(input);
+    t.is(awaitCounter, 1);
+  });
+
+  t.test('sync mapped', async t => {
+    t.test('with default undefined this', async t => {
+      const expected = [
+        [ 0, undefined ],
+        [ 2, undefined ],
+        [ 4, undefined ],
+      ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: Promise.resolve(1),
+        2: Promise.resolve(2),
+        3: Promise.resolve(3), // This is ignored because the length is 3.
+      };
+      const output = await fromAsync(input, function (v) {
+        return [ v * 2, this ];
+      });
+      t.deepEqual(output, expected);
+    });
+
+    t.test('with given this', async t => {
+      const thisValue = {};
+      const expected = [
+        [ 0, thisValue ],
+        [ 2, thisValue ],
+        [ 4, thisValue ],
+      ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: Promise.resolve(1),
+        2: Promise.resolve(2),
+        3: Promise.resolve(3), // This is ignored because the length is 3.
+      };
+      const output = await fromAsync(input, function (v) {
+        return [ v * 2, this ];
+      }, thisValue);
+      t.deepEqual(output, expected);
+    });
+
+    t.test('awaits each input value once', async t => {
+      const expectedValue = {};
+      const expected = [ expectedValue ];
+      let awaitCounter = 0;
+      const inputThenable = {
+        then (resolve, reject) {
+          awaitCounter ++;
+          resolve(expectedValue);
+        },
+      };
+      const input = {
+        length: 1,
+        0: inputThenable,
+      };
+      await fromAsync(input, v => v);
+      t.is(awaitCounter, 1);
+    });
+  });
+
+  t.test('async mapped', async t => {
+    t.test('with default undefined this', async t => {
+      const expected = [
+        [ 0, undefined ],
+        [ 2, undefined ],
+        [ 4, undefined ],
+      ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: Promise.resolve(1),
+        2: Promise.resolve(2),
+        3: Promise.resolve(3), // This is ignored because the length is 3.
+      };
+      const output = await fromAsync(input, async function (v) {
+        return [ v * 2, this ];
+      });
+      t.deepEqual(output, expected);
+    });
+
+    t.test('with given this', async t => {
+      const thisValue = {};
+      const expected = [
+        [ 0, thisValue ],
+        [ 2, thisValue ],
+        [ 4, thisValue ],
+      ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: Promise.resolve(1),
+        2: Promise.resolve(2),
+        3: Promise.resolve(3), // This is ignored because the length is 3.
+      };
+      const output = await fromAsync(input, async function (v) {
+        return [ v * 2, this ];
+      }, thisValue);
+      t.deepEqual(output, expected);
+    });
+
+    t.test('awaits each input value once', async t => {
+      const expectedValue = {};
+      const expected = [ expectedValue ];
+      let awaitCounter = 0;
+      const inputThenable = {
+        then (resolve, reject) {
+          awaitCounter ++;
+          resolve(expectedValue);
+        },
+      };
+      const input = {
+        length: 1,
+        0: inputThenable,
+      };
+      await fromAsync(input, v => v);
+      t.is(awaitCounter, 1);
+    });
+
+    t.test('awaits each callback result once', async t => {
+      const expectedValue = {};
+      const expected = [ expectedValue ];
+      const input = {
+        length: 3,
+        0: 0,
+        1: Promise.resolve(1),
+        2: Promise.resolve(2),
+        3: Promise.resolve(3), // This is ignored because the length is 3.
+      };
+
+      let awaitCounter = 0;
+
+      await fromAsync(input, v => {
+        return {
+          // This “then” method should occur three times:
+          // one for each value from the input.
+          then (resolve, reject) {
+            awaitCounter ++;
+            resolve(v);
+          },
+        };
+      });
+      t.is(awaitCounter, 3);
+    });
+  });
+});
+
 test('async-iterable input', async t => {
   t.test('is dumped', async t => {
     const expected = [ 0, 1, 2 ];
